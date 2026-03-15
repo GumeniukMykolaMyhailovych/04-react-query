@@ -1,8 +1,7 @@
 import Loader from "../Loader/Loader";
 import ErrorMessage from "../ErrorMessage/ErrorMessage";
-import toast from "react-hot-toast";
-import { useState } from "react";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
+import { useState, useEffect } from "react";
 import SearchBar from "../SearchBar/SearchBar";
 import MovieGrid from "../MovieGrid/MovieGrid";
 import MovieModal from "../MovieModal/MovieModal";
@@ -17,14 +16,21 @@ function App() {
   const [page, setPage] = useState(1);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, isSuccess } = useQuery({
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: query !== "",
+    placeholderData: (previousData) => previousData,
   });
 
   const movies = data?.results ?? [];
   const totalPages = data?.total_pages ?? 0;
+
+  useEffect(() => {
+    if (isSuccess && movies.length === 0) {
+      toast.error("No movies found for your request.");
+    }
+  }, [isSuccess, movies]);
 
   const handleSearch = (newQuery: string) => {
     if (newQuery.trim() === "") {
@@ -50,7 +56,6 @@ function App() {
       <Toaster position="top-right" />
 
       {isLoading && <Loader />}
-
       {isError && <ErrorMessage />}
 
       {movies.length > 0 && (
